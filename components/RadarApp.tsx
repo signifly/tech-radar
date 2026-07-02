@@ -12,6 +12,7 @@ import {
 import { RadarCanvas, type RadarItem, type Camera } from "./RadarCanvas";
 import { MeshBackground } from "./MeshBackground";
 import { SigniflyLogo } from "./SigniflyLogo";
+import { ViewTabs } from "./ViewTabs";
 
 const MOVEMENT_LABEL: Record<Blip["movement"], string> = {
   new: "New",
@@ -160,6 +161,11 @@ export function RadarApp({ blips }: { blips: Blip[] }) {
         </span>
       </div>
 
+      {/* -------- view tabs: top-centre -------- */}
+      <div className="absolute left-1/2 top-5 z-30 -translate-x-1/2 xl:top-8">
+        <ViewTabs />
+      </div>
+
       {/* -------- reset view: top-left, appears when zoomed -------- */}
       {focus.kind !== "none" && (
         <div className="absolute left-5 top-5 z-30 xl:left-8 xl:top-8">
@@ -196,8 +202,8 @@ export function RadarApp({ blips }: { blips: Blip[] }) {
         />
       </div>
 
-      {/* -------- filters: bottom-centre (floating) -------- */}
-      <div className="fixed bottom-4 left-1/2 z-30 flex w-[calc(100%-2rem)] max-w-[600px] -translate-x-1/2 flex-wrap items-center justify-center gap-1.5 xl:bottom-6">
+      {/* -------- filters: bottom-right (floating, compact) -------- */}
+      <div className="fixed bottom-4 right-4 z-30 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-1 xl:bottom-6 xl:right-8">
         <Filters
           quadFilter={quadFilter}
           ringFilter={ringFilter}
@@ -242,7 +248,7 @@ function Filters({
                 ? { background: q.color, borderColor: q.color, color: "#08090c" }
                 : { borderColor: `${q.color}55`, color: q.color }
             }
-            className="rounded-none border px-2.5 py-1 text-[11px] font-medium transition"
+            className="rounded-none border px-2 py-0.5 text-[10px] font-medium transition"
           >
             {q.label}
           </button>
@@ -255,7 +261,7 @@ function Filters({
           <button
             key={r.slug}
             onClick={() => onRing(r.slug)}
-            className={`rounded-none border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition ${
+            className={`rounded-none border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition ${
               on
                 ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-void)]"
                 : "border-[var(--color-line)] bg-[var(--color-void)]/40 text-[var(--color-ink-dim)] hover:border-[var(--color-ink-dim)]"
