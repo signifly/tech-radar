@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  /* Dark mode — a radar screen. Flat, no depth; the 4 quadrants keep colour. */
+  --color-void: #08090c;
+  --color-panel: #0d0f13;
+  --color-panel-2: #191c22;
+  --color-line: #262a33;
+  --color-line-soft: #15181e;
+  --color-ink: #f1f4f8;
+  --color-ink-dim: #98a0ad;
+  --color-ink-faint: #575e6b;
+
+  --color-lf: #22d3ee; /* languages & frameworks */
+  --color-tools: #a78bfa;
+  --color-tech: #34d399;
+  --color-platforms: #fbbf24;
+
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code",
+    "Fira Code", Menlo, Consolas, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-void, #08090c);
+  color: var(--color-ink, #f1f4f8);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+}
+
+/* thin, flat scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+}
+
+/* flat entrance — opacity only, no movement/depth */
+@keyframes blip-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
