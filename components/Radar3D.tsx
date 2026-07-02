@@ -27,6 +27,27 @@ const RING_HEIGHT: Record<Ring, number> = {
   hold: 0.15,
 };
 
+/* ---- tiny colour helpers for spherical shading ---- */
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+function mix(hex: string, target: number, t: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  const m = (c: number) => Math.round(c + (target - c) * t);
+  return `rgb(${m(r)},${m(g)},${m(b)})`;
+}
+const lighten = (hex: string, t: number) => mix(hex, 255, t);
+const darken = (hex: string, t: number) => mix(hex, 0, t);
+function hexA(hex: string, a: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
 type Node = {
   id: string;
   name: string;
@@ -154,7 +175,7 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
       return { x: cx + x1 * f, y: cy - y2 * f, s: f, zc };
     };
 
-    const draw = () => {
+    const draw = (now: number) => {
       const { selectedId, hoveredId } = stateRef.current;
       const nodes = nodesRef.current;
 
@@ -251,10 +272,28 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
         ctx.globalAlpha = 1;
 
         // sphere at the top of the pin
-        const r = Math.max(3, 0.05 * t.s) * (emph ? 1.3 : 1);
+        const r = Math.max(3, 0.05 * t.s) * (emph ? 1.25 : 1);
         hits.push({ id: node.id, x: t.x, y: t.y, r });
 
+        // hover pulse — expanding rings behind the ball
+        if (isHov) {
+          const period = 1100;
+          for (let k = 0; k < 2; k++) {
+            const phase = ((now / period + k * 0.5) % 1 + 1) % 1;
+            const pr = r + phase * (r * 2.4);
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, pr, 0, Math.PI * 2);
+            ctx.strokeStyle = hexA(color, (1 - phase) * 0.5);
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+        }
+
+        const hx = t.x - r * 0.34;
+        const hy = t.y - r * 0.34;
+
         if (node.movement === "new") {
+          // hollow, still shaded on the rim
           ctx.beginPath();
           ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
           ctx.fillStyle = "#08090c";
@@ -263,24 +302,38 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
           ctx.lineWidth = 2;
           ctx.stroke();
         } else {
-          // simple two-tone shading for a touch of dimensionality
+          // spherical shading: highlight → base → shaded rim
+          const grad = ctx.createRadialGradient(
+            hx,
+            hy,
+            r * 0.1,
+            t.x,
+            t.y,
+            r * 1.05,
+          );
+          grad.addColorStop(0, lighten(color, 0.62));
+          grad.addColorStop(0.5, color);
+          grad.addColorStop(1, darken(color, 0.55));
           ctx.beginPath();
           ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
-          ctx.fillStyle = color;
+          ctx.fillStyle = grad;
           ctx.fill();
+          // specular glint
           ctx.beginPath();
-          ctx.arc(t.x - r * 0.28, t.y - r * 0.28, r * 0.55, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255,255,255,0.22)";
+          ctx.arc(hx, hy, r * 0.24, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255,255,255,0.55)";
           ctx.fill();
         }
 
-        if (emph) {
+        if (isSel) {
           ctx.beginPath();
           ctx.arc(t.x, t.y, r + 4, 0, Math.PI * 2);
           ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = 1.5;
           ctx.stroke();
+        }
 
+        if (emph) {
           // label
           ctx.font = "600 12px var(--font-sans, system-ui, sans-serif)";
           ctx.textAlign = "left";
@@ -296,7 +349,7 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
       hitsRef.current = hits;
     };
 
-    const step = () => {
+    const step = (now: number) => {
       if (down) {
         // orbit handled in move
       } else if (targetYaw.current !== null) {
@@ -307,7 +360,7 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
       } else if (!reduce) {
         yaw.current += 0.0022; // idle auto-orbit
       }
-      draw();
+      draw(now);
       raf = requestAnimationFrame(step);
     };
 
