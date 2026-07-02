@@ -63,8 +63,8 @@ async function getBlipsFromDato(): Promise<Blip[]> {
         : {}),
     },
     body: JSON.stringify({ query: BLIPS_QUERY }),
-    // Revalidate periodically; DatoCMS webhooks can tighten this later.
-    next: { revalidate: 300 },
+    // Always fetch fresh from DatoCMS — no caching (see force-dynamic in page.tsx).
+    cache: "no-store",
   });
 
   if (!res.ok) {
