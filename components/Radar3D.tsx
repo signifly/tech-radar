@@ -48,6 +48,14 @@ function hexA(hex: string, a: number): string {
   return `rgba(${r},${g},${b},${a})`;
 }
 
+// Fixed world-space light direction (up, slightly front & to one side). It's
+// rotated with the camera each frame so the shading moves as you orbit.
+const LIGHT = ((): readonly [number, number, number] => {
+  const v = [0.5, 0.78, -0.45];
+  const l = Math.hypot(v[0], v[1], v[2]);
+  return [v[0] / l, v[1] / l, v[2] / l];
+})();
+
 type Node = {
   id: string;
   name: string;
@@ -247,6 +255,20 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
 
       const hits: Array<{ id: string; x: number; y: number; r: number }> = [];
 
+      // rotate the world light into screen space so the highlight tracks the orbit
+      const cyawL = Math.cos(yaw.current);
+      const syawL = Math.sin(yaw.current);
+      const cpL = Math.cos(pitch.current);
+      const spL = Math.sin(pitch.current);
+      const Lx1 = LIGHT[0] * cyawL - LIGHT[2] * syawL;
+      const Lz1 = LIGHT[0] * syawL + LIGHT[2] * cyawL;
+      const Ly2 = LIGHT[1] * cpL + Lz1 * spL;
+      const Lz2 = Lz1 * cpL - LIGHT[1] * spL;
+      const llen = Math.hypot(Lx1, -Ly2) || 1;
+      const ldirx = Lx1 / llen; // screen-space direction toward the light
+      const ldiry = -Ly2 / llen;
+      const facing = Math.max(0, -Lz2); // 1 = light faces camera, 0 = behind
+
       for (const { node, top, ground } of drawList) {
         const t = top!;
         const g = ground!;
@@ -289,8 +311,9 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
           }
         }
 
-        const hx = t.x - r * 0.34;
-        const hy = t.y - r * 0.34;
+        // highlight sits toward the (camera-rotated) light, so it orbits the ball
+        const hx = t.x + ldirx * r * 0.45;
+        const hy = t.y + ldiry * r * 0.45;
 
         if (node.movement === "new") {
           // hollow, still shaded on the rim
@@ -302,26 +325,26 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
           ctx.lineWidth = 2;
           ctx.stroke();
         } else {
-          // spherical shading: highlight → base → shaded rim
+          // spherical shading: lit side → base → shaded rim (all light-relative)
           const grad = ctx.createRadialGradient(
             hx,
             hy,
             r * 0.1,
             t.x,
             t.y,
-            r * 1.05,
+            r * 1.1,
           );
-          grad.addColorStop(0, lighten(color, 0.62));
+          grad.addColorStop(0, lighten(color, 0.3 + 0.4 * facing));
           grad.addColorStop(0.5, color);
-          grad.addColorStop(1, darken(color, 0.55));
+          grad.addColorStop(1, darken(color, 0.6));
           ctx.beginPath();
           ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
           ctx.fillStyle = grad;
           ctx.fill();
-          // specular glint
+          // specular glint — brightest when the light faces the camera
           ctx.beginPath();
-          ctx.arc(hx, hy, r * 0.24, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255,255,255,0.55)";
+          ctx.arc(hx, hy, r * 0.22, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${0.15 + 0.5 * facing})`;
           ctx.fill();
         }
 
