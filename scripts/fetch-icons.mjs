@@ -4,6 +4,7 @@
 import { writeFileSync } from "node:fs";
 
 const slugs = [
+  // existing
   "typescript",
   "react",
   "nextdotjs",
@@ -20,6 +21,29 @@ const slugs = [
   "playwright",
   "vitest",
   "claude",
+  // enrichment from repo scan
+  "reacthookform",
+  "graphql",
+  "framer",
+  "reactquery",
+  "laravel",
+  "trpc",
+  "reactrouter",
+  "greensock",
+  "php",
+  "shopify",
+  "githubactions",
+  "algolia",
+  "upstash",
+  "meilisearch",
+  "docker",
+  "shadcnui",
+  "lucide",
+  "turborepo",
+  "prisma",
+  "storybook",
+  "jest",
+  "webpack",
 ];
 
 const out = {};
