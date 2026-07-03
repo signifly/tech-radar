@@ -40,7 +40,11 @@ export const BlipSchema = z.object({
   description: z.string().default(""),
   /** Optional free-form tags for filtering/search later. */
   tags: z.array(z.string()).default([]),
+  /** Simple Icons slug for the brand logo (e.g. "react"). Empty = no logo. */
+  icon: z.string().default(""),
 });
 export type Blip = z.infer<typeof BlipSchema>;
+/** Input shape — fields with defaults (icon, tags, movement) may be omitted. */
+export type BlipInput = z.input<typeof BlipSchema>;
 
 export const BlipListSchema = z.array(BlipSchema);

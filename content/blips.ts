@@ -1,4 +1,4 @@
-import type { Blip } from "@/lib/schema";
+import type { BlipInput } from "@/lib/schema";
 
 /**
  * Seed data for the Signifly Tech Radar.
@@ -10,7 +10,7 @@ import type { Blip } from "@/lib/schema";
  * Keep descriptions short and honest — the value of the radar is the
  * *rationale*, not just the position.
  */
-export const blipsSeed: Blip[] = [
+export const blipsSeed: BlipInput[] = [
   /* ----------------------------- Languages & Frameworks ------------------- */
   {
     id: "typescript",

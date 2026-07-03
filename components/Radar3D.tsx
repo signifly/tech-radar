@@ -11,6 +11,18 @@ import {
 } from "@/lib/radar";
 import { SigniflyLogo } from "./SigniflyLogo";
 import { ViewTabs } from "./ViewTabs";
+import { ICON_PATHS } from "@/lib/icons.generated";
+
+// Parse each brand glyph to a Path2D once, then reuse it every frame.
+const iconPathCache = new Map<string, Path2D | null>();
+function iconPath(slug: string): Path2D | null {
+  if (!slug) return null;
+  if (iconPathCache.has(slug)) return iconPathCache.get(slug)!;
+  const d = ICON_PATHS[slug];
+  const p = d ? new Path2D(d) : null;
+  iconPathCache.set(slug, p);
+  return p;
+}
 
 const MOVEMENT_LABEL: Record<Blip["movement"], string> = {
   new: "New",
@@ -69,6 +81,7 @@ type Node = {
   angle: number; // ground angle (atan2)
   height: number;
   color: string;
+  icon: string;
 };
 
 type Proj = { x: number; y: number; s: number; zc: number } | null;
@@ -101,6 +114,7 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
         angle: Math.atan2(p.y, p.x),
         height: RING_HEIGHT[b.ring],
         color: QUADRANT_BY_SLUG[b.quadrant].color,
+        icon: b.icon,
       };
     });
   }, [blips]);
@@ -346,6 +360,27 @@ export function Radar3D({ blips }: { blips: Blip[] }) {
           ctx.arc(hx, hy, r * 0.22, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(255,255,255,${0.15 + 0.5 * facing})`;
           ctx.fill();
+        }
+
+        // brand logo inside the ball — or the blip number for concepts
+        const glyph = iconPath(node.icon);
+        if (glyph) {
+          const sz = r * 1.35;
+          const sc = sz / 24;
+          ctx.save();
+          ctx.translate(t.x - sz / 2, t.y - sz / 2);
+          ctx.scale(sc, sc);
+          ctx.fillStyle =
+            node.movement === "new" ? color : "rgba(8,9,12,0.86)";
+          ctx.fill(glyph);
+          ctx.restore();
+        } else {
+          ctx.fillStyle =
+            node.movement === "new" ? color : "rgba(8,9,12,0.8)";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = `700 ${Math.max(8, Math.round(r * 0.95))}px var(--font-mono, ui-monospace, monospace)`;
+          ctx.fillText(String(node.n), t.x, t.y + 0.5);
         }
 
         if (isSel) {

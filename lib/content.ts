@@ -1,5 +1,6 @@
 import { BlipListSchema, type Blip } from "./schema";
 import { blipsSeed } from "@/content/blips";
+import { DEFAULT_ICONS } from "./icons";
 
 /**
  * The single boundary between the radar UI and where blips come from.
@@ -10,15 +11,20 @@ import { blipsSeed } from "@/content/blips";
  * against `Blip`, so nothing else needs to move.
  */
 export async function getBlips(): Promise<Blip[]> {
+  let list: Blip[] | null = null;
   if (process.env.DATOCMS_API_TOKEN) {
     try {
-      return await getBlipsFromDato();
+      list = await getBlipsFromDato();
     } catch (err) {
       // Never blank the radar because the CMS hiccupped — fall back to seed.
       console.error("[radar] DatoCMS fetch failed, using seed data:", err);
     }
   }
-  return BlipListSchema.parse(blipsSeed);
+  if (!list) list = BlipListSchema.parse(blipsSeed);
+  // Fill brand logos from the default map when a blip has none set in the CMS.
+  return list.map((b) =>
+    b.icon ? b : { ...b, icon: DEFAULT_ICONS[b.id] ?? "" },
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -47,6 +53,7 @@ const BLIPS_QUERY = /* GraphQL */ `
       movement
       description
       tags
+      icon
     }
   }
 `;
@@ -91,6 +98,7 @@ async function getBlipsFromDato(): Promise<Blip[]> {
       movement: b.movement ?? "none",
       description: b.description ?? "",
       tags: Array.isArray(b.tags) ? b.tags : [],
+      icon: (b.icon as string) ?? "",
     };
   });
 
